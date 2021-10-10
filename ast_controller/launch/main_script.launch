@@ -1,0 +1,10 @@
+<launch>
+
+  <node name="test_controller" 
+        pkg="ast_controller" 
+        type="main_script.py" 
+        respawn="false" 
+        output="screen">
+  </node>
+
+</launch>

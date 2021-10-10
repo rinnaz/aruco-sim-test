@@ -1,0 +1,13 @@
+    material Marker/Five
+    {
+      technique
+      {
+        pass
+        {
+          texture_unit
+          {
+            texture Marker5.png
+          }
+        }
+      }
+    }

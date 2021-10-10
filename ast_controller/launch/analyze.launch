@@ -1,0 +1,10 @@
+<launch>
+
+  <node name="data_plotter" 
+        pkg="ast_controller" 
+        type="analyze_data.py" 
+        respawn="false" 
+        output="screen">
+  </node>
+
+</launch>
