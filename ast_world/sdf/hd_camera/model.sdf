@@ -110,7 +110,7 @@
             <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>0.0</updateRate>
-              <cameraName>cvconf_source_cam</cameraName>
+              <cameraName>ast_source_cam</cameraName>
               <imageTopicName>image_raw</imageTopicName>
               <cameraInfoTopicName>camera_info</cameraInfoTopicName>
               <frameName>hd_camera_link</frameName>

@@ -10,16 +10,17 @@ MarkerDetector::MarkerDetector()
     this->cameraParamsFile = "/config/head_camera.yaml";
     this->detectorParamsFile = "/config/detector_parameters.yaml";
 
-    this->detectorParams = cv::gibrid::DetectorParameters::create();
+    this->detectorParams = cv::aruco::DetectorParameters::create();
     this->readDetectorParams(this->package_path + this->detectorParamsFile, 
                              this->detectorParams);
 
     this->readCameraParams(this->package_path + this->cameraParamsFile, 
                            this->cameraMatrix, this->distCoeffs);
 
-    this->dict = cv::gibrid::getPredefinedDictionary(cv::gibrid::CORRECT_DICT_GIBRID_ORIGINAL);
+    this->dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100);
     
-    this->sub = nh.subscribe("/ast_source_cam/image_raw", 120, &MarkerDetector::callback, this);
+    this->sub = nh.subscribe("/ast_source_cam/image_raw", 
+                             120, &MarkerDetector::callback, this);
 }
 
 MarkerDetector::~MarkerDetector() {}
@@ -34,7 +35,7 @@ void MarkerDetector::readCameraParams(const std::string &filename,
 }
 
 void MarkerDetector::readDetectorParams(const std::string &filename, 
-                                        cv::Ptr<cv::gibrid::DetectorParameters> &detectorParams)
+                                        cv::Ptr<cv::aruco::DetectorParameters> &detectorParams)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
     fs["adaptiveThreshWinSizeMin"] >> detectorParams->adaptiveThreshWinSizeMin;
@@ -58,7 +59,7 @@ void MarkerDetector::readDetectorParams(const std::string &filename,
     fs["minOtsuStdDev"] >> detectorParams->minOtsuStdDev;
     fs["errorCorrectionRate"] >> detectorParams->errorCorrectionRate;
 
-    detectorParams->cornerRefinementMethod = cv::gibrid::CORNER_REFINE_SUBPIX;
+    detectorParams->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
 }
 
 void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img)
@@ -71,33 +72,33 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img)
     this->cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
 
     cv::Mat rotationMatrix;
-   
+
     cv::Mat imageCopy;
     (cv_ptr->image).copyTo(imageCopy);
   
     std::vector<int> markerIds;
     std::vector<std::vector<cv::Point2f>> markerCorners;
 
-    cv::gibrid::detectMarkers(imageCopy, 
+    cv::aruco::detectMarkers(imageCopy, 
                               this->dict, 
                               markerCorners, 
                               markerIds, 
                               this->detectorParams);
 
-    cv::gibrid::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
+    cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
     std::vector<cv::Vec3d> rvecs, tvecs;
 
-    cv::gibrid::estimatePoseSingleMarkers(markerCorners, 0.06, 
+    cv::aruco::estimatePoseSingleMarkers(markerCorners, 0.06, 
                                           this->cameraMatrix, this->distCoeffs, 
                                           rvecs, tvecs);
-  
+
     // draw axis for each marker
     for (int i = 0; i < markerIds.size(); i++)
     {
-        cv::gibrid::drawAxis(imageCopy, this->cameraMatrix, this->distCoeffs, 
-                             rvecs[i], tvecs[i], 0.05, 1);
+        cv::aruco::drawAxis(imageCopy, this->cameraMatrix, this->distCoeffs, 
+                             rvecs[i], tvecs[i], 0.05);
     }
-
+    
     cv::imshow("Marker_detector", imageCopy);
     cv::waitKey(1);
     
