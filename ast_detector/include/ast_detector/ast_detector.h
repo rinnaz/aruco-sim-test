@@ -28,12 +28,14 @@ public:
 
 private:
     ros::NodeHandle m_nh;
-    ros::Publisher m_pub;
+    ros::Publisher m_pub_pose, m_pub_image;
     ros::Subscriber m_sub;
     const std::string m_package_path;
     const std::string m_cameraParamsFile;
     const std::string m_detectorParamsFile;
     const std::string m_cameraTopicName;
+    const std::string m_imageTopicName;
+    const std::string m_markersTopicName;
 
     cv::Ptr<cv::aruco::DetectorParameters> m_detectorParams;
     cv::Mat m_cameraMatrix;

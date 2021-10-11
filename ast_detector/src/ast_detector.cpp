@@ -5,10 +5,13 @@ MarkerDetector::MarkerDetector()
   m_detectorParamsFile { "/config/detector_parameters.yaml" },
   m_package_path { ros::package::getPath("ast_detector") },
   m_cameraTopicName { "/ast_source_cam/image_raw" },
+  m_imageTopicName { "/ast_source_cam/image_with_markers" },
+  m_markersTopicName { "/detected_markers" },
   m_dict { cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100) }
 {
-    //Topic to publish
-    m_pub = m_nh.advertise<ast_msgs::Markers>("/detected_markers", 1);
+    //Topics to publish
+    m_pub_pose = m_nh.advertise<ast_msgs::Markers>(m_markersTopicName, 1);
+    m_pub_image = m_nh.advertise<sensor_msgs::Image>(m_imageTopicName, 1);
 
     //Topic to subscribe
     readDetectorParams(m_package_path + m_detectorParamsFile);
@@ -56,8 +59,10 @@ void MarkerDetector::readDetectorParams(const std::string &filename)
 
 void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img) const
 {
-    ast_msgs::Markers markers_pub;
-    ast_msgs::MarkerPose m_pose;
+    ast_msgs::Markers markers_msg;
+    ast_msgs::MarkerPose pose_msg;
+
+    sensor_msgs::Image image_msg;
 
     auto cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
 
@@ -89,25 +94,31 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img) const
                             rvecs[i], tvecs[i], 0.05);
     }
     
-    cv::imshow("Marker_detector", imageCopy);
-    cv::waitKey(1);
+
+    // cv::imshow("Marker_detector", imageCopy);
+    // cv::waitKey(1);
     
     for (auto i { 0 }; i < markerIds.size(); i++)
     {
         cv::Rodrigues(rvecs[i], rotationMatrix);
 
-        markers_pub.markerIds_m.push_back(markerIds[i]);
+        markers_msg.markerIds_m.push_back(markerIds[i]);
+        
         for (auto j : { 0, 1, 2 })
         {
-            m_pose.tvecs_m.push_back(tvecs[i][j]);
-            m_pose.z_rot_m.push_back(rotationMatrix.at<double>(j, 2));
+            pose_msg.tvecs_m.push_back(tvecs[i][j]);
+            pose_msg.z_rot_m.push_back(rotationMatrix.at<double>(j, 2));
         }
 
-        markers_pub.poses_m.push_back(m_pose);
-        m_pose.tvecs_m.clear();
-        m_pose.z_rot_m.clear();
+        markers_msg.poses_m.push_back(pose_msg);
+        pose_msg.tvecs_m.clear();
+        pose_msg.z_rot_m.clear();
     }
-
-    m_pub.publish(markers_pub);
+    
+    m_pub_pose.publish(markers_msg);
+    
+    cv_ptr->image = imageCopy;
+    (*cv_ptr).toImageMsg(image_msg);
+    m_pub_image.publish(image_msg);
 } 
 
