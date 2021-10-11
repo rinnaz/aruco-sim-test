@@ -9,10 +9,25 @@ Packages for accuracy and precision analysis of the ArUco pose estimation using 
 
 ## How to start
 
-`roslaunch ast_world basic_world.launch`
+Launch simulation scene
 
-`rosrun ast_detector ast_detector`
+```
+roslaunch ast_world basic_world.launch
+```
+  
+Launch marker detector
+```
+rosrun ast_detector ast_detector
+```
 
-`roslaunch ast_controller main_script.launch`
+Launch controller (rotates markers and saves pose estimation error data)
 
-`roslaunch ast_controller analyze.launch`
+```
+roslaunch ast_controller main_script.launch
+```
+
+Draw plots
+
+```
+roslaunch ast_controller analyze.launch
+```
