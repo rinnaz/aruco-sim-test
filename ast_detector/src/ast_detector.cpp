@@ -1,42 +1,35 @@
 #include "ast_detector/ast_detector.h"
 
 MarkerDetector::MarkerDetector()
+: cameraParamsFile { "/config/head_camera.yaml" },
+  detectorParamsFile { "/config/detector_parameters.yaml" },
+  package_path { ros::package::getPath("ast_detector") },
+  cameraTopicName { "/ast_source_cam/image_raw" },
+  dict { cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100) }
 {
     //Topic to publish
     this->pub = nh.advertise<ast_msgs::Markers>("/detected_markers", 1);
 
     //Topic to subscribe
-    this->package_path = ros::package::getPath("ast_detector");
-    this->cameraParamsFile = "/config/head_camera.yaml";
-    this->detectorParamsFile = "/config/detector_parameters.yaml";
+    this->readDetectorParams(this->package_path + this->detectorParamsFile);
+    this->readCameraParams(this->package_path + this->cameraParamsFile);
 
-    this->detectorParams = cv::aruco::DetectorParameters::create();
-    this->readDetectorParams(this->package_path + this->detectorParamsFile, 
-                             this->detectorParams);
-
-    this->readCameraParams(this->package_path + this->cameraParamsFile, 
-                           this->cameraMatrix, this->distCoeffs);
-
-    this->dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100);
-    
-    this->sub = nh.subscribe("/ast_source_cam/image_raw", 
+    this->sub = nh.subscribe(this->cameraTopicName, 
                              1, &MarkerDetector::callback, this);
 }
 
 MarkerDetector::~MarkerDetector() {}
 
-void MarkerDetector::readCameraParams(const std::string &filename, 
-                                      cv::Mat &cameraMatrix, 
-                                      cv::Mat &distCoeffs)
+void MarkerDetector::readCameraParams(const std::string &filename)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
     fs["camera_matrix"] >> cameraMatrix;
     fs["distortion_coefficients"] >> distCoeffs;
 }
 
-void MarkerDetector::readDetectorParams(const std::string &filename, 
-                                        cv::Ptr<cv::aruco::DetectorParameters> &detectorParams)
+void MarkerDetector::readDetectorParams(const std::string &filename)
 {
+    this->detectorParams = cv::aruco::DetectorParameters::create();
     cv::FileStorage fs(filename, cv::FileStorage::READ);
     fs["adaptiveThreshWinSizeMin"] >> detectorParams->adaptiveThreshWinSizeMin;
     fs["adaptiveThreshWinSizeMax"] >> detectorParams->adaptiveThreshWinSizeMax;
@@ -59,17 +52,15 @@ void MarkerDetector::readDetectorParams(const std::string &filename,
     fs["minOtsuStdDev"] >> detectorParams->minOtsuStdDev;
     fs["errorCorrectionRate"] >> detectorParams->errorCorrectionRate;
 
-    detectorParams->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
+    this->detectorParams->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
 }
 
-void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img)
+void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img) const
 {
-    int c;
-
     ast_msgs::Markers markers_pub;
     ast_msgs::MarkerPose m_pose;
 
-    this->cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+    auto cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
 
     cv::Mat rotationMatrix;
 
@@ -93,7 +84,7 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img)
                                          rvecs, tvecs);
 
     // draw axis for each marker
-    for (int i = 0; i < markerIds.size(); i++)
+    for (auto i { 0 }; i < markerIds.size(); i++)
     {
         cv::aruco::drawAxis(imageCopy, this->cameraMatrix, this->distCoeffs, 
                             rvecs[i], tvecs[i], 0.05);
@@ -102,21 +93,20 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img)
     cv::imshow("Marker_detector", imageCopy);
     cv::waitKey(1);
     
-    for (int i = 0; i < markerIds.size(); i++)
+    for (auto i { 0 }; i < markerIds.size(); i++)
     {
         cv::Rodrigues(rvecs[i], rotationMatrix);
 
         markers_pub.markerIds_m.push_back(markerIds[i]);
-        for (int j = 0; j < 3; j++)
+        for (auto j : { 0, 1, 2 })
         {
             m_pose.tvecs_m.push_back(tvecs[i][j]);
+            m_pose.z_rot_m.push_back(rotationMatrix.at<double>(j, 2));
         }
-
-        m_pose.zz_cos = rotationMatrix.at<double>(2, 2);
-        m_pose.zz_sin = rotationMatrix.at<double>(0, 2);
 
         markers_pub.poses_m.push_back(m_pose);
         m_pose.tvecs_m.clear();
+        m_pose.z_rot_m.clear();
     }
 
     this->pub.publish(markers_pub);

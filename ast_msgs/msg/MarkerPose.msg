@@ -1,3 +1,2 @@
 float64[] tvecs_m
-float64 zz_cos
-float64 zz_sin
+float64[] z_rot_m

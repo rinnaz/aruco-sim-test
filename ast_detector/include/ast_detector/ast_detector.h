@@ -22,23 +22,22 @@ class MarkerDetector
 public:
     MarkerDetector();
     ~MarkerDetector();
-    void readCameraParams(const std::string &filename, cv::Mat &cameraMatrix, cv::Mat &distCoeffs);
-    void readDetectorParams(const std::string &filename, cv::Ptr<cv::aruco::DetectorParameters> &detectorParams);
-    void callback(const sensor_msgs::Image::ConstPtr &img);
+    void readCameraParams(const std::string &filename);
+    void readDetectorParams(const std::string &filename);
+    void callback(const sensor_msgs::Image::ConstPtr &img) const;
 
 private:
     ros::NodeHandle nh;
     ros::Publisher pub;
     ros::Subscriber sub;
-    std::string package_path;
-    std::string cameraParamsFile;
-    std::string detectorParamsFile;
+    const std::string package_path;
+    const std::string cameraParamsFile;
+    const std::string detectorParamsFile;
+    const std::string cameraTopicName;
 
     cv::Ptr<cv::aruco::DetectorParameters> detectorParams;
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
 
     cv::Ptr<cv::aruco::Dictionary> dict;
-
-    cv_bridge::CvImagePtr cv_ptr;
 };
