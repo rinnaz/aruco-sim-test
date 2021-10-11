@@ -27,17 +27,17 @@ public:
     void callback(const sensor_msgs::Image::ConstPtr &img) const;
 
 private:
-    ros::NodeHandle nh;
-    ros::Publisher pub;
-    ros::Subscriber sub;
-    const std::string package_path;
-    const std::string cameraParamsFile;
-    const std::string detectorParamsFile;
-    const std::string cameraTopicName;
+    ros::NodeHandle m_nh;
+    ros::Publisher m_pub;
+    ros::Subscriber m_sub;
+    const std::string m_package_path;
+    const std::string m_cameraParamsFile;
+    const std::string m_detectorParamsFile;
+    const std::string m_cameraTopicName;
 
-    cv::Ptr<cv::aruco::DetectorParameters> detectorParams;
-    cv::Mat cameraMatrix;
-    cv::Mat distCoeffs;
+    cv::Ptr<cv::aruco::DetectorParameters> m_detectorParams;
+    cv::Mat m_cameraMatrix;
+    cv::Mat m_distCoeffs;
 
-    cv::Ptr<cv::aruco::Dictionary> dict;
+    cv::Ptr<cv::aruco::Dictionary> m_dict;
 };

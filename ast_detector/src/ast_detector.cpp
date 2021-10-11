@@ -1,21 +1,20 @@
 #include "ast_detector/ast_detector.h"
 
 MarkerDetector::MarkerDetector()
-: cameraParamsFile { "/config/head_camera.yaml" },
-  detectorParamsFile { "/config/detector_parameters.yaml" },
-  package_path { ros::package::getPath("ast_detector") },
-  cameraTopicName { "/ast_source_cam/image_raw" },
-  dict { cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100) }
+: m_cameraParamsFile { "/config/head_camera.yaml" },
+  m_detectorParamsFile { "/config/detector_parameters.yaml" },
+  m_package_path { ros::package::getPath("ast_detector") },
+  m_cameraTopicName { "/ast_source_cam/image_raw" },
+  m_dict { cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100) }
 {
     //Topic to publish
-    this->pub = nh.advertise<ast_msgs::Markers>("/detected_markers", 1);
+    m_pub = m_nh.advertise<ast_msgs::Markers>("/detected_markers", 1);
 
     //Topic to subscribe
-    this->readDetectorParams(this->package_path + this->detectorParamsFile);
-    this->readCameraParams(this->package_path + this->cameraParamsFile);
+    readDetectorParams(m_package_path + m_detectorParamsFile);
+    readCameraParams(m_package_path + m_cameraParamsFile);
 
-    this->sub = nh.subscribe(this->cameraTopicName, 
-                             1, &MarkerDetector::callback, this);
+    m_sub = m_nh.subscribe(m_cameraTopicName, 1, &MarkerDetector::callback, this);
 }
 
 MarkerDetector::~MarkerDetector() {}
@@ -23,36 +22,36 @@ MarkerDetector::~MarkerDetector() {}
 void MarkerDetector::readCameraParams(const std::string &filename)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
-    fs["camera_matrix"] >> cameraMatrix;
-    fs["distortion_coefficients"] >> distCoeffs;
+    fs["camera_matrix"] >> m_cameraMatrix;
+    fs["distortion_coefficients"] >> m_distCoeffs;
 }
 
 void MarkerDetector::readDetectorParams(const std::string &filename)
 {
-    this->detectorParams = cv::aruco::DetectorParameters::create();
+    m_detectorParams = cv::aruco::DetectorParameters::create();
     cv::FileStorage fs(filename, cv::FileStorage::READ);
-    fs["adaptiveThreshWinSizeMin"] >> detectorParams->adaptiveThreshWinSizeMin;
-    fs["adaptiveThreshWinSizeMax"] >> detectorParams->adaptiveThreshWinSizeMax;
-    fs["adaptiveThreshWinSizeStep"] >> detectorParams->adaptiveThreshWinSizeStep;
-    fs["adaptiveThreshConstant"] >> detectorParams->adaptiveThreshConstant;    
-    fs["minMarkerPerimeterRate"] >> detectorParams->minMarkerPerimeterRate;
-    fs["maxMarkerPerimeterRate"] >> detectorParams->maxMarkerPerimeterRate;
-    fs["polygonalApproxAccuracyRate"] >> detectorParams->polygonalApproxAccuracyRate;
-    fs["minCornerDistanceRate"] >> detectorParams->minCornerDistanceRate;
-    fs["minDistanceToBorder"] >> detectorParams->minDistanceToBorder;
-    fs["minMarkerDistanceRate"] >> detectorParams->minMarkerDistanceRate;    
-    fs["cornerRefinementWinSize"] >> detectorParams->cornerRefinementWinSize;
-    fs["cornerRefinementMaxIterations"] >> detectorParams->cornerRefinementMaxIterations;
-    fs["cornerRefinementMinAccuracy"] >> detectorParams->cornerRefinementMinAccuracy;
-    fs["markerBorderBits"] >> detectorParams->markerBorderBits;
+    fs["adaptiveThreshWinSizeMin"] >> m_detectorParams->adaptiveThreshWinSizeMin;
+    fs["adaptiveThreshWinSizeMax"] >> m_detectorParams->adaptiveThreshWinSizeMax;
+    fs["adaptiveThreshWinSizeStep"] >> m_detectorParams->adaptiveThreshWinSizeStep;
+    fs["adaptiveThreshConstant"] >> m_detectorParams->adaptiveThreshConstant;    
+    fs["minMarkerPerimeterRate"] >> m_detectorParams->minMarkerPerimeterRate;
+    fs["maxMarkerPerimeterRate"] >> m_detectorParams->maxMarkerPerimeterRate;
+    fs["polygonalApproxAccuracyRate"] >> m_detectorParams->polygonalApproxAccuracyRate;
+    fs["minCornerDistanceRate"] >> m_detectorParams->minCornerDistanceRate;
+    fs["minDistanceToBorder"] >> m_detectorParams->minDistanceToBorder;
+    fs["minMarkerDistanceRate"] >> m_detectorParams->minMarkerDistanceRate;    
+    fs["cornerRefinementWinSize"] >> m_detectorParams->cornerRefinementWinSize;
+    fs["cornerRefinementMaxIterations"] >> m_detectorParams->cornerRefinementMaxIterations;
+    fs["cornerRefinementMinAccuracy"] >> m_detectorParams->cornerRefinementMinAccuracy;
+    fs["markerBorderBits"] >> m_detectorParams->markerBorderBits;
 
-    fs["perspectiveRemovePixelPerCell"] >> detectorParams->perspectiveRemovePixelPerCell;    
-    fs["perspectiveRemoveIgnoredMarginPerCell"] >> detectorParams->perspectiveRemoveIgnoredMarginPerCell;
-    fs["maxErroneousBitsInBorderRate"] >> detectorParams->maxErroneousBitsInBorderRate;
-    fs["minOtsuStdDev"] >> detectorParams->minOtsuStdDev;
-    fs["errorCorrectionRate"] >> detectorParams->errorCorrectionRate;
+    fs["perspectiveRemovePixelPerCell"] >> m_detectorParams->perspectiveRemovePixelPerCell;    
+    fs["perspectiveRemoveIgnoredMarginPerCell"] >> m_detectorParams->perspectiveRemoveIgnoredMarginPerCell;
+    fs["maxErroneousBitsInBorderRate"] >> m_detectorParams->maxErroneousBitsInBorderRate;
+    fs["minOtsuStdDev"] >> m_detectorParams->minOtsuStdDev;
+    fs["errorCorrectionRate"] >> m_detectorParams->errorCorrectionRate;
 
-    this->detectorParams->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
+    m_detectorParams->cornerRefinementMethod = cv::aruco::CORNER_REFINE_SUBPIX;
 }
 
 void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img) const
@@ -71,22 +70,22 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img) const
     std::vector<std::vector<cv::Point2f>> markerCorners;
 
     cv::aruco::detectMarkers(imageCopy, 
-                              this->dict, 
+                              m_dict, 
                               markerCorners, 
                               markerIds, 
-                              this->detectorParams);
+                              m_detectorParams);
 
     cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
     std::vector<cv::Vec3d> rvecs, tvecs;
 
     cv::aruco::estimatePoseSingleMarkers(markerCorners, 0.06, 
-                                         this->cameraMatrix, this->distCoeffs, 
+                                         m_cameraMatrix, m_distCoeffs, 
                                          rvecs, tvecs);
 
     // draw axis for each marker
     for (auto i { 0 }; i < markerIds.size(); i++)
     {
-        cv::aruco::drawAxis(imageCopy, this->cameraMatrix, this->distCoeffs, 
+        cv::aruco::drawAxis(imageCopy, m_cameraMatrix, m_distCoeffs, 
                             rvecs[i], tvecs[i], 0.05);
     }
     
@@ -109,6 +108,6 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img) const
         m_pose.z_rot_m.clear();
     }
 
-    this->pub.publish(markers_pub);
+    m_pub.publish(markers_pub);
 } 
 
