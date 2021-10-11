@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   ast_msgs
-  rrt_cv_gibrid
 )
 
 ## System dependencies are found with CMake's conventions
@@ -30,10 +29,10 @@ include_directories(include
 )
 
 
- add_executable(ast_detector src/main.cpp src/ast_detector.cpp)
+add_executable(ast_detector src/main.cpp src/ast_detector.cpp)
 
 
- add_dependencies(${PROJECT_NAME} ast_msgs_generate_messages_cpp)
+add_dependencies(${PROJECT_NAME} ast_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(ast_detector

@@ -3,7 +3,7 @@
 MarkerDetector::MarkerDetector()
 {
     //Topic to publish
-    this->pub = nh.advertise<ast_msgs::Markers>("/detected_markers", 120);
+    this->pub = nh.advertise<ast_msgs::Markers>("/detected_markers", 1);
 
     //Topic to subscribe
     this->package_path = ros::package::getPath("ast_detector");
@@ -20,7 +20,7 @@ MarkerDetector::MarkerDetector()
     this->dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_100);
     
     this->sub = nh.subscribe("/ast_source_cam/image_raw", 
-                             120, &MarkerDetector::callback, this);
+                             1, &MarkerDetector::callback, this);
 }
 
 MarkerDetector::~MarkerDetector() {}
@@ -89,14 +89,14 @@ void MarkerDetector::callback(const sensor_msgs::Image::ConstPtr &img)
     std::vector<cv::Vec3d> rvecs, tvecs;
 
     cv::aruco::estimatePoseSingleMarkers(markerCorners, 0.06, 
-                                          this->cameraMatrix, this->distCoeffs, 
-                                          rvecs, tvecs);
+                                         this->cameraMatrix, this->distCoeffs, 
+                                         rvecs, tvecs);
 
     // draw axis for each marker
     for (int i = 0; i < markerIds.size(); i++)
     {
         cv::aruco::drawAxis(imageCopy, this->cameraMatrix, this->distCoeffs, 
-                             rvecs[i], tvecs[i], 0.05);
+                            rvecs[i], tvecs[i], 0.05);
     }
     
     cv::imshow("Marker_detector", imageCopy);

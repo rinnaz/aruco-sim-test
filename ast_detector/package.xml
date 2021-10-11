@@ -76,8 +76,6 @@
   <build_export_depend>message_generation</build_export_depend>
   <exec_depend>message_runtime</exec_depend>
   <depend>ast_msgs</depend>
-  <depend>rrt_cv_gibrid</depend>
-
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
