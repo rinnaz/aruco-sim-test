@@ -25,20 +25,19 @@ catkin_package(
 include_directories(include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${rrt_cv_gibrid_INCLUDE_DIRS} ##gibrid
 )
 
+add_library(ast_detector_l src/ast_detector.cpp)
+target_link_libraries(ast_detector_l ${OpenCV_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(ast_detector src/main.cpp src/ast_detector.cpp)
+add_executable(ast_detector src/main.cpp)
 
 
 add_dependencies(${PROJECT_NAME} ast_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(ast_detector
-  ${OpenCV_LIBRARIES} 
-  ${catkin_LIBRARIES}
-  ${rrt_cv_gibrid_LIBRARIES} ##gibrid
+  ast_detector_l
  )
 
 
