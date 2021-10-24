@@ -5,8 +5,8 @@ from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
 import time
 
-from ast_msgs.msg import Markers, MarkerPose
-from geometry_msgs.msg import Quaternion
+from rnrt_msgs.msg import Markers
+from geometry_msgs.msg import Pose, Quaternion
 from tf.transformations import quaternion_from_euler, quaternion_multiply
 import math as m
 import numpy as np
