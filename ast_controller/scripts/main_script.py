@@ -12,6 +12,8 @@ import math as m
 import numpy as np
 import pickle as pkl
 from scipy.spatial.transform import Rotation
+from threading import Thread, Lock
+
 
 def setPose(x, y, z, quat):
     result = Pose()
@@ -23,7 +25,7 @@ def setPose(x, y, z, quat):
 
 
 class Controller:
-    _flag = None
+    _mutex = Lock()
     _offset = None
     _batch_size = 10
     _batch_counter = 0
@@ -64,15 +66,15 @@ class Controller:
         output_lin = list()
         output_ang = list()
 
-        for i in range(0, 1):
+        for i in range(0, len(data)):
             xyz = [data[i].position.x,
                    data[i].position.y,
                    data[i].position.z]
 
             rot_msg = Rotation.from_quat([data[i].orientation.x,
-                                         data[i].orientation.y,
-                                         data[i].orientation.z,
-                                         data[i].orientation.w])
+                                          data[i].orientation.y,
+                                          data[i].orientation.z,
+                                          data[i].orientation.w])
 
             z_vec = rot_msg.as_dcm()[:, 2]
 
@@ -98,8 +100,10 @@ class Controller:
 
     def call_detector(self, msg):
 
-        if(self._flag == None):
+        if(self._mutex.locked()):
             return "dump"
+
+        self._mutex.acquire()
 
         data = dict(
             sorted(zip(msg.marker_ids, msg.poses), key=lambda x: x[0]))
@@ -115,6 +119,9 @@ class Controller:
                 *self._linear_err_list_current, *lin]
             self._angular_err_list_current = [
                 *self._angular_err_list_current, *ang]
+
+        self._mutex.release()
+
 
     def pose_pub(self, q_rot, model_name, m_pose):
         state_msg = ModelState()
@@ -137,7 +144,7 @@ class Controller:
         time.sleep(0.0167)
 
     def __init__(self, batch_in=10, deg_in=30, distance_to_cm=1.0):
-        self._flag = None
+        self._mutex.acquire()
         rospack = rospkg.RosPack()
         self._package_path = rospack.get_path('ast_controller')
 
@@ -176,9 +183,11 @@ class Controller:
                           + '/saved_data/'
                           + 'out_data_' + str(self._base_dist) + '.pkl', 'wb')
         counter = 0
+        self._mutex.release()
+
         while(not rospy.is_shutdown()):
 
-            self._flag = None
+            self._mutex.acquire()
 
             quat = quaternion_from_euler(0, 0, np.radians(self._offset))
             time.sleep(0.02)
@@ -189,12 +198,14 @@ class Controller:
             self.pose_pub(quat, "cuboid_marker6", cm6_pose)
 
             time.sleep(0.017)
-            self._flag = 1
+            # self._flag = 1
+            self._mutex.release()
 
             while(self._batch_counter < self._batch_size):
                 time.sleep(0.1)
 
             if(self._batch_counter == self._batch_size):
+                self._mutex.acquire()
                 self._offset_list.append(self._offset)
                 self._linear_err_list.append(self._linear_err_list_current)
                 self._angular_err_list.append(self._angular_err_list_current)
@@ -202,6 +213,7 @@ class Controller:
                 self._linear_err_list_current = list()
                 self._angular_err_list_current = list()
                 self._batch_counter = 0
+                self._mutex.release()
 
             self._offset = self._offset + 1.0
             print("Another batch! #" + str(counter))
@@ -230,6 +242,6 @@ if __name__ == '__main__':
     rospy.init_node("test_controller")
 
     try:
-        controller = Controller(50, 30, 1.0)
+        controller = Controller(50, 25, 1.0)
     except rospy.ROSInterruptException:
         pass
