@@ -1,0 +1,8 @@
+<launch>
+  <!-- START WORLD -->
+  <include  file="$(find ast_world)/launch/basic_world.launch" />
+
+  <!-- START CV MARKER DETECTION -->
+  <include file="$(find ast_detector)/launch/marker_detector.launch" />
+
+</launch>
