@@ -6,6 +6,9 @@ Packages for accuracy and precision analysis of the ArUco pose estimation using 
 
 <img src="images/detected markers.png" width="500">
 
+## Dependencies
+
+[rinnaz/ros-toolbox](https://github.com/rinnaz/ros-toolbox)
 
 ## How to start
 
